@@ -1,29 +1,46 @@
-function [Voc, Jsc, eta] = calc_vertical_solar_cell_efficiency()
+function [Voc, Isc, eta_col] = calc_vertical_solar_cell_efficiency()
 
-    lambda_min = 200; % nm
-    lambda_max = 1100; % nm
-    Npts_lambda = 1e2;
-    Npts_x = 1e2;
-    Npts_z = 1e2;
-    m_max = 50;
-    W = 20e-6;
-    d = 50e-6;
+    lambda_min = 200; % (nm) Minimum wavelength to consider
+    lambda_max = 1900; % (nm) Maximum wavelength to consider
+    Npts_lambda = 1e2; % Number of points for wavelength
+    Npts_x = 1e2; % Number of points for x dimension
+    Npts_z = 1e2; % Number of points for z dimension
+    m_max = 50; % number of terms to use in fourier expansions
+    W_m = 20e-6; % (m) Horizontal separation between n-doped regions
+    d_m = 10e-6; % (m) Depth of cell
     T = 300; % (K)
-    tau_n = 1e6;
-    Ln = 33e-6;
-    Dn = Ln^2/tau_n;
-    Sn = 0;
+    tau_n = 1e6; % (s)
+    Ln_m = 33e-6; % (m)
+    Jo = 1e-6; % ??
     
+    Sn = 3000;
+    Sn_top = Sn;
+    Sn_bot = Sn;
+    
+    Ln = Ln_m * 1e2;
+    W = W_m * 1e2;
+    d = d_m * 1e2;
+    Dn = Ln^2/tau_n;
     
 %     Isc = calc_Isc(m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, Ln, Sn);
 %     Voc_z = calc_Voc_z(z, m_max, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
     
     lambda_vec = linspace(lambda_min, lambda_max, Npts_lambda);
-    [eta_col_vec, eta_abs_vec] = calc_collection_efficiency(lambda_vec, m_max, W, d, Dn, Ln, Sn);
-    for lind = 1:length(lambda_vec)
-        lambda = lambda_vec(lind);
-        [flux_per_m2] = get_photon_flux_per_m2( lambda );
-        flux_vec(lind) = flux_per_m2;
+    [eta_col_vec, eta_abs_vec, flux_vec, alpha_vec] = calc_collection_efficiency(lambda_vec, m_max, W, d, Dn, Ln, Sn);
+    
+    
+    
+    d_m_vec = linspace(1e-6, 1000e-6, 1e3);
+    d_vec = d_m_vec * 1e2; % (cm)
+    
+    Voc_vec = zeros(1, length(d_vec));
+    Isc_vec = zeros(1, length(d_vec));
+    for dind = 1:length(d_vec)
+        d = d_vec(dind);
+        Voc = calc_Voc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
+        Isc = calc_Isc(m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, Ln, Sn);
+        Voc_vec(dind) = Voc;
+        Isc_vec(dind) = Isc;
     end
     
     figure(1)
@@ -31,6 +48,7 @@ function [Voc, Jsc, eta] = calc_vertical_solar_cell_efficiency()
     hold on
     plot(lambda_vec, eta_col_vec,'b')
     plot(lambda_vec, eta_abs_vec,'r')
+    set(gca, 'yscale','log')
     xlabel('Wavelength (nm)')
     ylabel('Efficiency')
     fixfigs(1,3,14,12)
@@ -41,6 +59,23 @@ function [Voc, Jsc, eta] = calc_vertical_solar_cell_efficiency()
     xlabel('Wavelength (nm)')
     ylabel('Photon flux')
     fixfigs(2,3,14,12)
+    
+    figure(3)
+    clf
+    plot(lambda_vec, alpha_vec)
+    xlabel('Wavelength (nm)')
+    ylabel('Absorption Coefficient (1/cm)')
+    set(gca, 'yscale','log')
+    fixfigs(3,3,14,12)
+    
+%     figure(4)
+%     clf
+%     plot(lambda_vec, Isc)
+%     xlabel('Wavelength (nm)')
+%     ylabel('Isc (A)')
+%     set(gca, 'yscale','log')
+%     fixfigs(4,3,14,12)
+    
     
 end
 
@@ -125,7 +160,7 @@ end
 
 function Jsc_m_lambda_z = calc_Jsc_m_lambda_z(z, W, alpha, beta_m, A_m, B_m, N)
     q = 1.602e-19; % (C) electron charge
-    Jsc_m = 8*N*alpha*q/W/(beta_m^2 - alpha^2) * (exp(-alpha*z) + A_m*exp(beta_m*z) + B_m*exp(-beta_m*z) );
+    Jsc_m_lambda_z = 8*N*alpha*q/W/(beta_m^2 - alpha^2) * (exp(-alpha*z) + A_m*exp(beta_m*z) + B_m*exp(-beta_m*z) );
 end
 
 function Jsc_lambda_z = calc_Jsc_lambda_z( z, m_max, W, d, Dn, tau_n, Sn_top, Sn_bot, alpha, N)
@@ -148,17 +183,11 @@ function Jsc_lambda_z = calc_Jsc_lambda_z( z, m_max, W, d, Dn, tau_n, Sn_top, Sn
     % Precalculate coefficients
     [A_m_vec, B_m_vec, beta_m_vec] = calc_vert_cell_coefficients(m_max,  W, d, Dn, Ln, Sn_top, Sn_bot, alpha );
     
-    % Calculate Jsc everywhere
-    Jsc = zeros( 1, length(zvec) );
-    for zind = 1:length(zvec)
-        z = zvec(zind);
-
-        Jsc = 0;
-        for m = 1:m_max
-            Jsc = Jsc + calc_Jsc_m_lambda_z(z, W, alpha, beta_m_vec(m), A_m_vec(m), B_m_vec(m), N);
-        end
+    Jsc = 0;
+    for m = 1:m_max
+        Jsc = Jsc + calc_Jsc_m_lambda_z(z, W, alpha, beta_m_vec(m), A_m_vec(m), B_m_vec(m), N);
     end
-    
+    Jsc_lambda_z = Jsc;
 end
 
 function Isc_lambda_m = calc_Isc_lambda_m(W, d, N, alpha, beta_m, Dn, Sn)
@@ -191,16 +220,20 @@ function [eta_col_lambda, eta_abs_lambda] = calc_collection_efficiency_lambda(m_
     eta_col_lambda = Isc_lambda/(W*q*N*eta_abs_lambda);
 end
 
-function [eta_col_vec, eta_abs_vec] = calc_collection_efficiency(lambda_vec, m_max, W, d, Dn, Ln, Sn)
+function [eta_col_vec, eta_abs_vec, flux_vec, alpha_vec] = calc_collection_efficiency(lambda_vec, m_max, W, d, Dn, Ln, Sn)
 
     eta_col_vec = zeros(1, length(lambda_vec));
     eta_abs_vec = zeros(1, length(lambda_vec));
+    flux_vec = zeros(1, length(lambda_vec));
+    alpha_vec = zeros(1, length(lambda_vec));
     for lind = 1:length(lambda_vec)
         lambda = lambda_vec(lind);
         
         flux_per_m2 = get_photon_flux_per_m2( lambda );
-        N = flux_per_m2/100^2; % N is per cm^2
+        N = flux_per_m2/100^2; % N needs to be in cm^-2
         alpha = get_absorption_coefficient(lambda);
+        alpha_vec(lind) = alpha;
+        flux_vec(lind) = flux_per_m2;
         
         [eta_col_lambda, eta_abs_lambda] = calc_collection_efficiency_lambda(m_max, W, d, Dn, Ln, Sn, alpha, N);
         eta_col_vec(lind) = eta_col_lambda;
@@ -211,7 +244,7 @@ end
 
 function Jsc_z = calc_Jsc_z(z, m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot)
     lambda_vec = linspace(lambda_min, lambda_max, Npts_lambda);
-    
+
     Jsc_lambda_z_vec = zeros(1, Npts_lambda);
     for lind = 1:Npts_lambda
         lambda = lambda_vec(lind);
@@ -243,11 +276,12 @@ function Isc = calc_Isc(m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, Ln
     Isc = trapz(lambda_vec, Isc_lambda_vec);
 end
 
-function Voc_z = calc_Voc_z(z, m_max, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo)
-    1.3806e-23; % (J/K) Boltzmann Constant
+function Voc_z = calc_Voc_z(z, m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo)
+    k = 1.3806e-23; % (J/K) Boltzmann Constant
     q = 1.602e-19; % (C) Electron Charge
 
-    Jsc_z = calc_Jsc_z(z, m_max, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot);
+    %Jsc_z = calc_Jsc_z(z, m_max, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot);
+    Jsc_z = calc_Jsc_z(z, m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot);
     
     Voc_z = k*T/q * log( Jsc_z/Jo + 1);
 end
