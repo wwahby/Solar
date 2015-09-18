@@ -1,52 +1,48 @@
 lambda_min = 400; % (nm) Minimum wavelength to consider
 lambda_max = 1100; % (nm) Maximum wavelength to consider
-Npts_lambda = 1e1; % Number of points for wavelength
+Npts_lambda = 1e2; % Number of points for wavelength
 Npts_x = 1e2; % Number of points for x dimension
 Npts_z = 1e2; % Number of points for z dimension
-m_max = 50; % number of terms to use in fourier expansions
+m_max = 10; % number of terms to use in fourier expansions
 W_m = 20e-6; % (m) Horizontal separation between n-doped regions
 d_m = 1000e-6; % (m) Depth of cell
 T = 300; % (K)
-tau_n = 1e6; % (s)
+tau_n = 1e-6; % (s)
 Ln_m = 33e-6; % (m)
-Jo = 1e-6; % ??
+np = 1e4; % (cm^-3);
 
-Sn = 3000;
-Sn_top = Sn;
-Sn_bot = Sn;
+sn_vec = [0, 1000, 2000, 3000];
 
+% Convert all units to cm
 Ln = Ln_m * 1e2;
-W = W_m * 1e2;
+W = W_m  *1e2;
 d = d_m * 1e2;
 Dn = Ln^2/tau_n;
-
-%     Isc = calc_Isc(m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, Ln, Sn);
-%     Voc_z = calc_Voc_z(z, m_max, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
-
-lambda_vec = linspace(lambda_min, lambda_max, Npts_lambda);
-[eta_col_vec, eta_abs_vec, flux_vec, alpha_vec] = vsc.calc_collection_efficiency(lambda_vec, m_max, W, d, Dn, Ln, Sn);
+q = 1.602e-19; % (C) Electron charge
+Jo = q*Dn/Ln*np;
 
 
-
-d_m_vec = linspace(1e-6, 1000e-6, 1e3);
-d_vec = d_m_vec * 1e2; % (cm)
-
-Voc_vec = zeros(1, length(d_vec));
-Isc_vec = zeros(1, length(d_vec));
-for dind = 1:length(d_vec)
-    d = d_vec(dind);
-    Voc = vsc.calc_Voc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
-    Isc = vsc.calc_Isc(m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, Ln, Sn);
-    Voc_vec(dind) = Voc;
-    Isc_vec(dind) = Isc;
-end
 
 figure(1)
 clf
 hold on
-plot(lambda_vec, eta_col_vec,'b')
-plot(lambda_vec, eta_abs_vec,'r')
-set(gca, 'yscale','log')
+colors = {'k', 'b', 'r', 'g', 'm', 'c'};
+linestyles = {'-', '--', '-.', ':'};
+for snind = 1:length(sn_vec)
+    Sn = sn_vec(snind);
+    Sn_top = Sn;
+    Sn_bot = Sn;
+    
+    lambda_vec = linspace(lambda_min, lambda_max, Npts_lambda);
+    [eta_col_vec, eta_abs_vec, flux_vec, alpha_vec] = vsc.calc_collection_efficiency(lambda_vec, m_max, W, d, Dn, Ln, Sn);
+    plot(lambda_vec, eta_col_vec, 'color', 'b', 'linestyle', linestyles{snind} )
+    plot(lambda_vec, eta_abs_vec, 'color', 'r', 'linestyle', linestyles{snind} )
+end
+
+
+
+%set(gca, 'yscale','log')
+ylim([0.80 1.0])
 xlabel('Wavelength (nm)')
 ylabel('Efficiency')
 fixfigs(1,3,14,12)
@@ -66,6 +62,31 @@ ylabel('Absorption Coefficient (1/cm)')
 set(gca, 'yscale','log')
 fixfigs(3,3,14,12)
 
+
+%%
+d_max_m = 1000e-6;
+d_m_vec = linspace(1e-6, d_max_m, 1e2);
+d_vec = d_m_vec * 1e2; % (cm)
+d_m_fixed = d_max_m;
+d_fixed = d_m_fixed * 1e2;
+
+Voc_vec = zeros(1, length(d_vec));
+Jsc_vec = zeros(1, length(d_vec));
+Isc_vec = zeros(1, length(d_vec));
+Sn_top = 0;
+Sn_bot = 0;
+for dind = 1:length(d_vec)
+    d = d_vec(dind);
+    Jsc_z = vsc.calc_Jsc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d_fixed, Dn, tau_n, Sn_top, Sn_bot);
+    Voc = vsc.calc_Voc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d_fixed, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
+    Isc = vsc.calc_Isc(m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, Ln, Sn);
+    Voc_vec(dind) = Voc;
+    Isc_vec(dind) = Isc;
+    Jsc_vec(dind) = Jsc_z;
+end
+
+
+%%
 figure(4)
 clf
 plot(d_m_vec*1e6, Isc_vec)
