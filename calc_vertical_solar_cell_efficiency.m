@@ -77,14 +77,36 @@ Sn_top = 0;
 Sn_bot = 0;
 for dind = 1:length(d_vec)
     d = d_vec(dind);
-    Jsc_z = vsc.calc_Jsc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d_fixed, Dn, tau_n, Sn_top, Sn_bot);
-    Voc = vsc.calc_Voc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d_fixed, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
+    Jsc_z = vsc.calc_Jsc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot);
+    Voc = vsc.calc_Voc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
     Isc = vsc.calc_Isc(m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, Ln, Sn);
     Voc_vec(dind) = Voc;
     Isc_vec(dind) = Isc;
     Jsc_vec(dind) = Jsc_z;
 end
 
+%% Power out vs power in
+photon_flux_cm2_vec = zeros(1,length(lambda_vec));
+photon_power_cm2_vec = zeros(1, length(lambda_vec));
+photon_irradiance_cm2nm_vec = zeros(1, length(lambda_vec));
+for lind = 1:length(lambda_vec)
+    lambda = lambda_vec(lind);
+    flux_per_m2 = vsc.get_photon_flux_per_m2( lambda );
+    photon_flux_cm2 = flux_per_m2/100^2; % N is per cm^2
+    photon_flux_cm2_vec(lind) = photon_flux_cm2;
+    [photon_power_m2, photon_irradiance_m2nm] = vsc.get_photon_power_per_m2( lambda );
+    photon_power_cm2_vec(lind) = photon_power_m2 / 100^2;
+    photon_irradiance_cm2nm_vec(lind) = photon_irradiance_m2nm / 100^2;
+end
+
+E_photon_ev = 1240./lambda_vec;
+E_photon = E_photon_ev*q;
+
+Pout = Voc_vec .* Isc_vec; % Power output per cm of solar cell length (function of wafer thickness
+Pin = sum(photon_power_cm2_vec) .* d_vec; % Input power per cm of solar cell length
+%Pin = trapz(lambda_vec, photon_irradiance_cm2nm_vec) * d_vec;
+
+eta_eff = Pout./Pin;
 
 %%
 figure(4)
@@ -102,3 +124,12 @@ xlabel('Thickness (microns)')
 ylabel('Voc (V)')
 %set(gca, 'yscale','log')
 fixfigs(5,3,14,12)
+
+figure(6)
+clf
+hold on
+plot(d_m_vec*1e6, eta_eff)
+xlabel('Thickness (microns)')
+ylabel('Efficiency')
+%ylim([0 1])
+fixfigs(6,3,14,12)
