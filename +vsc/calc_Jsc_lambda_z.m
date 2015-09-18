@@ -20,7 +20,9 @@ function Jsc_lambda_z = calc_Jsc_lambda_z( z, m_max, W, d, Dn, tau_n, Sn_top, Sn
     
     Jsc = 0;
     for m = 1:m_max
-        Jsc = Jsc + vsc.calc_Jsc_m_lambda_z(z, W, alpha, beta_m_vec(m), A_m_vec(m), B_m_vec(m), N);
+        Jsc_new_m = vsc.calc_Jsc_m_lambda_z(z, W, alpha, beta_m_vec(m), A_m_vec(m), B_m_vec(m), N);
+        Jsc_new_m( isnan(Jsc_new_m) ) = 0; % clear NaNs
+        Jsc = Jsc + Jsc_new_m; %vsc.calc_Jsc_m_lambda_z(z, W, alpha, beta_m_vec(m), A_m_vec(m), B_m_vec(m), N);
     end
     Jsc_lambda_z = Jsc;
 end
