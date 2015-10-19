@@ -11,15 +11,15 @@ tau_n = 1e-6; % (s)
 Ln_m = 33e-6; % (m)
 np = 1e4; % (cm^-3);
 
-sn_vec = [0, 1000, 2000, 3000];
+sn_vec_cm = [0, 1000, 2000, 3000];
 
 % Convert all units to cm
-Ln = Ln_m * 1e2;
-W = W_m  *1e2;
-d = d_m * 1e2;
-Dn = Ln^2/tau_n;
+Ln_cm = Ln_m * 1e2;
+W_cm = W_m  *1e2;
+d_cm = d_m * 1e2;
+Dn_cm2 = Ln_cm^2/tau_n;
 q = 1.602e-19; % (C) Electron charge
-Jo = q*Dn/Ln*np;
+Jo = q*Dn_cm2/Ln_cm*np;
 
 
 %% D75 Fig2
@@ -28,13 +28,13 @@ clf
 hold on
 colors = {'k', 'b', 'r', 'g', 'm', 'c'};
 linestyles = {'-', '--', '-.', ':'};
-for snind = 1:length(sn_vec)
-    Sn = sn_vec(snind);
-    Sn_top = Sn;
-    Sn_bot = Sn;
+for snind = 1:length(sn_vec_cm)
+    Sn_cm = sn_vec_cm(snind);
+    Sn_top_cm = Sn_cm;
+    Sn_bot_cm = Sn_cm;
     
     lambda_vec_nm = linspace(lambda_min_nm, lambda_max_nm, Npts_lambda);
-    [eta_col_vec, eta_abs_vec, flux_vec, alpha_vec] = vsc.calc_collection_efficiency(lambda_vec_nm, m_max, W, d, Dn, Ln, Sn);
+    [eta_col_vec, eta_abs_vec, flux_vec_m2, alpha_vec_cm] = vsc.calc_collection_efficiency(lambda_vec_nm, m_max, W_cm, d_cm, Dn_cm2, Ln_cm, Sn_cm);
     
     plot(lambda_vec_nm, eta_col_vec, 'color', 'b', 'linestyle', linestyles{snind} )
     plot(lambda_vec_nm, eta_abs_vec, 'color', 'r', 'linestyle', linestyles{snind} )
@@ -51,19 +51,47 @@ fixfigs(1,3,14,12)
 
 figure(2)
 clf
-plot(lambda_vec_nm, flux_vec)
+plot(lambda_vec_nm, flux_vec_m2)
 xlabel('Wavelength (nm)')
 ylabel('Photon flux')
 fixfigs(2,3,14,12)
 
 figure(3)
 clf
-plot(lambda_vec_nm, alpha_vec)
+plot(lambda_vec_nm, alpha_vec_cm)
 xlabel('Wavelength (nm)')
 ylabel('Absorption Coefficient (1/cm)')
 set(gca, 'yscale','log')
 fixfigs(3,3,14,12)
 
+%% D75 Figure 3
+d_m = 1000e-6;
+d_cm = d_m*100;
+Ln_m = 33e-6;
+Ln_cm = Ln_m*100;
+Sn_cm = 0;
+tau_n = 1e-6; % (s)
+Dn_cm2 = Ln_cm^2/tau_n;
+
+zvec = linspace(0,d_cm,Npts_z);
+gen_vec_z = zeros(1, length(zvec));
+for zind = 1:length(zvec)
+    z = zvec(zind);
+    lambda_vec_nm = linspace(lambda_min_nm, lambda_max_nm, Npts_lambda);
+    [eta_col_vec, eta_abs_vec, flux_vec_m2, alpha_vec_cm] = vsc.calc_collection_efficiency(lambda_vec_nm, m_max, W_cm, d_cm, Dn_cm2, Ln_cm, Sn_cm);
+    flux_vec_cm2 = flux_vec_m2/1e4;
+    gen_vec_integrand = flux_vec_cm2 .* alpha_vec_cm .* exp(-alpha_vec_cm * z);
+    lambda_vec_cm = lambda_vec_nm /1e7;
+    gen_vec_z(zind) = trapz(lambda_vec_cm, gen_vec_integrand);
+end
+
+figure(4)
+clf
+plot(zvec*1e4, gen_vec_z)
+set(gca,'yscale','log')
+xlabel('Vertical Distance (um)')
+ylabel('Generation Constant (cm^-3s^-1)')
+fixfigs(4,3,14,12)
 
     
 
@@ -78,13 +106,13 @@ d_fixed = d_m_fixed * 1e2;
 Voc_vec = zeros(1, length(d_vec));
 Jsc_vec = zeros(1, length(d_vec));
 Isc_vec = zeros(1, length(d_vec));
-Sn_top = 0;
-Sn_bot = 0;
+Sn_top_cm = 0;
+Sn_bot_cm = 0;
 for dind = 1:length(d_vec)
-    d = d_vec(dind);
-    Jsc_z = vsc.calc_Jsc_z(d, m_max, lambda_min_nm, lambda_max_nm, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot);
-    Voc = vsc.calc_Voc_z(d, m_max, lambda_min_nm, lambda_max_nm, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
-    Isc = vsc.calc_Isc(m_max, lambda_min_nm, lambda_max_nm, Npts_lambda, W, d, Dn, Ln, Sn);
+    d_cm = d_vec(dind);
+    Jsc_z = vsc.calc_Jsc_z(d_cm, m_max, lambda_min_nm, lambda_max_nm, Npts_lambda, W_cm, d_cm, Dn_cm2, tau_n, Sn_top_cm, Sn_bot_cm);
+    Voc = vsc.calc_Voc_z(d_cm, m_max, lambda_min_nm, lambda_max_nm, Npts_lambda, W_cm, d_cm, Dn_cm2, tau_n, Sn_top_cm, Sn_bot_cm, T, Jo);
+    Isc = vsc.calc_Isc(m_max, lambda_min_nm, lambda_max_nm, Npts_lambda, W_cm, d_cm, Dn_cm2, Ln_cm, Sn_cm);
     Voc_vec(dind) = Voc;
     Isc_vec(dind) = Isc;
     Jsc_vec(dind) = Jsc_z;
