@@ -1,5 +1,5 @@
-lambda_min = 400; % (nm) Minimum wavelength to consider
-lambda_max = 1100; % (nm) Maximum wavelength to consider
+lambda_min_nm = 400; % (nm) Minimum wavelength to consider
+lambda_max_nm = 1100; % (nm) Maximum wavelength to consider
 Npts_lambda = 1e2; % Number of points for wavelength
 Npts_x = 1e2; % Number of points for x dimension
 Npts_z = 1e2; % Number of points for z dimension
@@ -22,7 +22,7 @@ q = 1.602e-19; % (C) Electron charge
 Jo = q*Dn/Ln*np;
 
 
-
+%% D75 Fig2
 figure(1)
 clf
 hold on
@@ -33,10 +33,11 @@ for snind = 1:length(sn_vec)
     Sn_top = Sn;
     Sn_bot = Sn;
     
-    lambda_vec = linspace(lambda_min, lambda_max, Npts_lambda);
-    [eta_col_vec, eta_abs_vec, flux_vec, alpha_vec] = vsc.calc_collection_efficiency(lambda_vec, m_max, W, d, Dn, Ln, Sn);
-    plot(lambda_vec, eta_col_vec, 'color', 'b', 'linestyle', linestyles{snind} )
-    plot(lambda_vec, eta_abs_vec, 'color', 'r', 'linestyle', linestyles{snind} )
+    lambda_vec_nm = linspace(lambda_min_nm, lambda_max_nm, Npts_lambda);
+    [eta_col_vec, eta_abs_vec, flux_vec, alpha_vec] = vsc.calc_collection_efficiency(lambda_vec_nm, m_max, W, d, Dn, Ln, Sn);
+    
+    plot(lambda_vec_nm, eta_col_vec, 'color', 'b', 'linestyle', linestyles{snind} )
+    plot(lambda_vec_nm, eta_abs_vec, 'color', 'r', 'linestyle', linestyles{snind} )
 end
 
 
@@ -45,22 +46,26 @@ end
 ylim([0.80 1.0])
 xlabel('Wavelength (nm)')
 ylabel('Efficiency')
+title('Dhariwal 1975 - Figure 2')
 fixfigs(1,3,14,12)
 
 figure(2)
 clf
-plot(lambda_vec, flux_vec)
+plot(lambda_vec_nm, flux_vec)
 xlabel('Wavelength (nm)')
 ylabel('Photon flux')
 fixfigs(2,3,14,12)
 
 figure(3)
 clf
-plot(lambda_vec, alpha_vec)
+plot(lambda_vec_nm, alpha_vec)
 xlabel('Wavelength (nm)')
 ylabel('Absorption Coefficient (1/cm)')
 set(gca, 'yscale','log')
 fixfigs(3,3,14,12)
+
+
+    
 
 
 %%
@@ -77,20 +82,20 @@ Sn_top = 0;
 Sn_bot = 0;
 for dind = 1:length(d_vec)
     d = d_vec(dind);
-    Jsc_z = vsc.calc_Jsc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot);
-    Voc = vsc.calc_Voc_z(d, m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
-    Isc = vsc.calc_Isc(m_max, lambda_min, lambda_max, Npts_lambda, W, d, Dn, Ln, Sn);
+    Jsc_z = vsc.calc_Jsc_z(d, m_max, lambda_min_nm, lambda_max_nm, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot);
+    Voc = vsc.calc_Voc_z(d, m_max, lambda_min_nm, lambda_max_nm, Npts_lambda, W, d, Dn, tau_n, Sn_top, Sn_bot, T, Jo);
+    Isc = vsc.calc_Isc(m_max, lambda_min_nm, lambda_max_nm, Npts_lambda, W, d, Dn, Ln, Sn);
     Voc_vec(dind) = Voc;
     Isc_vec(dind) = Isc;
     Jsc_vec(dind) = Jsc_z;
 end
 
 %% Power out vs power in
-photon_flux_cm2_vec = zeros(1,length(lambda_vec));
-photon_power_cm2_vec = zeros(1, length(lambda_vec));
-photon_irradiance_cm2nm_vec = zeros(1, length(lambda_vec));
-for lind = 1:length(lambda_vec)
-    lambda = lambda_vec(lind);
+photon_flux_cm2_vec = zeros(1,length(lambda_vec_nm));
+photon_power_cm2_vec = zeros(1, length(lambda_vec_nm));
+photon_irradiance_cm2nm_vec = zeros(1, length(lambda_vec_nm));
+for lind = 1:length(lambda_vec_nm)
+    lambda = lambda_vec_nm(lind);
     flux_per_m2 = vsc.get_photon_flux_per_m2( lambda );
     photon_flux_cm2 = flux_per_m2/100^2; % N is per cm^2
     photon_flux_cm2_vec(lind) = photon_flux_cm2;
@@ -99,7 +104,7 @@ for lind = 1:length(lambda_vec)
     photon_irradiance_cm2nm_vec(lind) = photon_irradiance_m2nm / 100^2;
 end
 
-E_photon_ev = 1240./lambda_vec;
+E_photon_ev = 1240./lambda_vec_nm;
 E_photon = E_photon_ev*q;
 
 Pout = Voc_vec .* Isc_vec; % Power output per cm of solar cell length (function of wafer thickness
