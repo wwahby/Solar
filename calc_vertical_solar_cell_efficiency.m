@@ -78,22 +78,31 @@ zvec_m = logspace(-9,-3,Npts_z);
 %zvec_m = linspace(0, 1000e-6, Npts_z);
 zvec_cm = zvec_m * 1e2;
 gen_vec_z = zeros(1, length(zvec_cm));
+gen_wehrli_vec_z = zeros(1, length(zvec_cm));
 for zind = 1:length(zvec_cm)
     z_cm = zvec_cm(zind);
     lambda_vec_nm = linspace(0, lambda_max_nm, Npts_lambda);
-    [eta_col_vec, eta_abs_vec, flux_vec_m2, alpha_vec_cm] = vsc.calc_collection_efficiency(lambda_vec_nm, m_max, W_cm, d_cm, Dn_cm2, Ln_cm, Sn_cm);
+    [eta_col_vec, eta_abs_vec, flux_vec_m2, alpha_vec_cm, flux_wehrli_vec_m2] = vsc.calc_collection_efficiency(lambda_vec_nm, m_max, W_cm, d_cm, Dn_cm2, Ln_cm, Sn_cm);
     flux_vec_cm2 = flux_vec_m2/1e4;
+    flux_wehrli_vec_cm2 = flux_wehrli_vec_m2/1e4;
+    
     gen_vec_integrand = flux_vec_cm2 .* alpha_vec_cm .* exp(-alpha_vec_cm * z_cm);
+    gen_wehrli_vec_integrand = flux_wehrli_vec_cm2 .* alpha_vec_cm .* exp(-alpha_vec_cm * z_cm);
     lambda_vec_cm = lambda_vec_nm /1e7;
     gen_vec_z(zind) = trapz(lambda_vec_cm, gen_vec_integrand);
+    gen_wehrli_vec_z(zind) = trapz(lambda_vec_cm, gen_wehrli_vec_integrand);
 end
 
 figure(4)
 clf
+hold on
 plot(zvec_m*1e6, gen_vec_z)
+plot(zvec_m*1e6, gen_wehrli_vec_z,'r--')
 set(gca,'yscale','log')
+grid on
+%ylim([1e16 1e24])
 xlabel('Vertical Distance (um)')
-ylabel('Generation Constant (cm^-3s^-1)')
+ylabel('Generation Constant (cm^{-3}s^{-1})')
 fixfigs(4,3,14,12)
 
     
