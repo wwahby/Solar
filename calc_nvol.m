@@ -32,4 +32,4 @@ nvol_per_nm_d = exp(alpha*r) *(alpha^2*r^2 - 2*alpha*r + 2);
 
 %% Combine
 nvol = nvol_a + nvol_b*(nvol_c - nvol_d);
-nvol_per_nm_ = nvol_per_nm_a + nvol_per_nm_b*(nvol_per_nm_c - nvol_per_nm_d);
+nvol_per_nm = nvol_per_nm_a + nvol_per_nm_b*(nvol_per_nm_c - nvol_per_nm_d);
