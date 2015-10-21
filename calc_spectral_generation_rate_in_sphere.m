@@ -1,4 +1,4 @@
-function [G_per_nm, flux_per_m2nm, irradiance_per_m2nm, alpha_cm] = calc_generation_rate_in_sphere(lambda_nm, r_m, zo_m)
+function [G_per_nm, flux_per_m2nm, irradiance_per_m2nm, alpha_cm] = calc_spectral_generation_rate_in_sphere(lambda_nm, r_m, zo_m)
 %% Calculates carrier generation rate in a sphere of radius r, centered on depth zo, for illumination of wavelength lambda
 % Assumes zo-r > 0
 
