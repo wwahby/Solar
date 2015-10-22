@@ -1,4 +1,4 @@
-function [G_shell, G_inner, G_outer, flux_tot, eff_col_shell, i_act, J_act] = calc_generation_rate_in_spherical_shell(lambda_nm_vec, r_inner_m, r_outer_m, zo_m)
+function [G_shell, G_inner, G_outer, flux_tot, eff_col_shell, flux_tot_per_m2, i_act, J_act] = calc_generation_rate_in_spherical_shell(lambda_nm_vec, r_inner_m, r_outer_m, zo_m)
 
 G_inner_per_nm_vec = zeros(1,length(lambda_nm_vec));
 G_outer_per_nm_vec = zeros(1,length(lambda_nm_vec));
