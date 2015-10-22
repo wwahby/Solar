@@ -75,7 +75,7 @@ for nind = 1:num_collectors
     
     for rind = 1:num_radii
         r_outer_m = r_col_vec(rind);
-        depth_m = 0.5*r_outer_m  + (nind-1)*r_outer_m*sqrt(2);
+        depth_m = r_outer_m;
         
         [G_shell, G_inner, G_outer, flux_tot, eff_col_shell, flux_tot_per_m2, i_act, J_act] = calc_generation_rate_in_spherical_shell(lambda_nm_vec, r_inner_m, r_outer_m, depth_m);
         
