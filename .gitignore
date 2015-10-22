@@ -226,3 +226,6 @@ pip-log.txt
 # Vim Stuff
 *.swp
 
+# Matlab Stuff
+*.asv
+
