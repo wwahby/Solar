@@ -183,16 +183,6 @@ $RECYCLE.BIN/
 # Mac crap
 .DS_Store
 
-#############
-## Vim
-#############
-*.swp
-
-#############
-## MATLAB
-#############
-*.asv
-
 
 #############
 ## Python
@@ -224,3 +214,15 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+
+# LaTeX Stuff
+*.aux
+*.bbl
+*.blg
+*.log
+*.pdf
+
+# Vim Stuff
+*.swp
+
