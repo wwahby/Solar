@@ -20,7 +20,7 @@ for zind = 1:length(zo_m_vec)
     zo_m = zo_m_vec(zind);
     for nind = 1:num_collectors
         depth_m = zo_m  + (nind-1)*r_outer_m*sqrt(2);
-        [G_shell, G_inner, G_outer, flux_tot, eff_col_shell, flux_tot_per_m2, i_act, J_act] = calc_generation_rate_in_spherical_shell(lambda_nm_vec, r_inner_m, r_outer_m, depth_m);
+        [G_shell, G_inner, G_outer, flux_tot, eff_col_shell, flux_tot_per_m2, i_act, J_act] = cpm.calc_generation_rate_in_spherical_shell(lambda_nm_vec, r_inner_m, r_outer_m, depth_m);
         
         Gtot_vec(nind) = 2*G_shell; % fcc lattice -- two shells per layer
         Gtot_mat(zind, nind) = 2*G_shell;
@@ -68,7 +68,7 @@ for nind = 1:num_collectors
         r_outer_m = r_col_vec(rind);
         depth_m = r_inner_m;
         
-        [G_shell, G_inner, G_outer, flux_tot, eff_col_shell, flux_tot_per_m2, i_act, J_act] = calc_generation_rate_in_spherical_shell(lambda_nm_vec, r_inner_m, r_outer_m, depth_m);
+        [G_shell, G_inner, G_outer, flux_tot, eff_col_shell, flux_tot_per_m2, i_act, J_act] = cpm.calc_generation_rate_in_spherical_shell(lambda_nm_vec, r_inner_m, r_outer_m, depth_m);
         
         Gtot_mat_2(nind,rind) = 2*G_shell; % fcc lattice -- two shells per layer
         Gout_mat(nind,rind) = G_outer; % fcc lattice -- two shells per layer

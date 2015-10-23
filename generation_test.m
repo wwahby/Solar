@@ -12,8 +12,8 @@ flux_per_m2nm_vec = zeros(1, length(lambda_nm_vec));
 irradiance_per_m2nm_vec = zeros(1, length(lambda_nm_vec));
 for lind = 1:length(lambda_nm_vec)
     lambda_nm = lambda_nm_vec(lind);
-    [G_dep_per_nm, flux_per_m2nm, irradiance_per_m2nm, alpha_cm] = calc_generation_rate_in_sphere(lambda_nm, r_dep_m, zo_m);
-    [G_col_per_nm, flux_per_m2nm, irradiance_per_m2nm, alpha_cm] = calc_generation_rate_in_sphere(lambda_nm, r_col_m, zo_m);
+    [G_dep_per_nm, flux_per_m2nm, irradiance_per_m2nm, alpha_cm] = cpm.calc_generation_rate_in_sphere(lambda_nm, r_dep_m, zo_m);
+    [G_col_per_nm, flux_per_m2nm, irradiance_per_m2nm, alpha_cm] = cpm.calc_generation_rate_in_sphere(lambda_nm, r_col_m, zo_m);
     
     G_dep_per_nm_vec(lind) = G_dep_per_nm;
     G_col_per_nm_vec(lind) = G_col_per_nm;
