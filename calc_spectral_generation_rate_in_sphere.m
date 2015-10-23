@@ -29,3 +29,8 @@ end
 G_per_nm_A = exp(-alpha*za)*(alpha^2*(r^2-(zo-za)^2) + 2*alpha*(zo-za)-2);
 G_per_nm_B = exp(-alpha*zb)*(alpha^2*(r^2-(zo-zb)^2) + 2*alpha*(zb-zo)+2);
 G_per_nm = pi/alpha^2*phi_o * (G_per_nm_A  + G_per_nm_B);
+
+% just zero this out if there is no photon flux. Sometimes we get NaNs
+if (phi_o == 0)
+    G_per_nm = 0;
+end
